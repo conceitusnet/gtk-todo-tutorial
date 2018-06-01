@@ -1,0 +1,28 @@
+#!/usr/bin/env ruby
+
+require 'gtk3'
+
+# Exigir todos os arquivos ruby ​​na pasta do aplicativo de forma recursiva
+application_root_path = File.expand_path(__dir__)
+Dir[File.join(application_root_path, '**', '*.rb')].each { |file| require file }
+
+# Defina os arquivos de origem e de destino do comando glib-compile-resources
+resource_xml = File.join(application_root_path, 'resources', 'gresources.xml')
+resource_bin = File.join(application_root_path, 'gresources.bin')
+
+# Construa o binário
+system("glib-compile-resources",
+       "--target", resource_bin,
+       "--sourcedir", File.dirname(resource_xml),
+       resource_xml)
+
+resource = Gio::Resource.load(resource_bin)
+Gio::Resources.register(resource)
+
+at_exit do
+  # Before exiting, please remove the binary we produced, thanks.
+  FileUtils.rm_f(resource_bin)
+end
+
+app = ToDo::Application.new
+puts app.run
